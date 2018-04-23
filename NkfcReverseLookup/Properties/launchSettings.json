@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "NkfcReverseLookup": {
+      "commandName": "Project",
+      "commandLineArgs": "Y:\\github.com\\KageShiron\\UnicodeNormalizationSample\\UCD\\11.0.0\\UnicodeData.txt"
+    }
+  }
+}
