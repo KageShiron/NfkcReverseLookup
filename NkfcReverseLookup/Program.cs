@@ -16,28 +16,29 @@ namespace NkfcReverseLookup
         
         static void Main(string[] args) => CommandLineApplication.Execute<Program>(args);
 
-        private void OnExecute()
+        private void OnExecute(CommandLineApplication app)
         {
+            if(string.IsNullOrEmpty(UnicodeDataFile))
+            {
+                app.ShowHelp();
+                return;
+            }
+
             Console.WriteLine("{");
             var (cplist,data) = Load(UnicodeDataFile);
-            List<uint> list = new List<uint>();
+            Stack<uint> st = new Stack<uint>();
             HashSet<uint> hash = new HashSet<uint>();
             foreach (var target in cplist)
             {
-                list.Clear();
                 hash.Clear();
-                list.Add(target);
-                for (int i = 0; i < list.Count; i++)
+                st.Push(target);
+                while(st.TryPop(out uint val))
                 {
-                    uint val = list[i];
                     foreach (var d in data)
                     {
                         if ( Array.IndexOf(d.Value,val) >= 0)
                         {
-                            if (hash.Add(d.Key))
-                            {
-                                list.Add(d.Key);
-                            }
+                            if (hash.Add(d.Key)) st.Push(d.Key);
                         }
                     }
                 }
