@@ -6,7 +6,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace NkfcReverseLookup
+namespace NfkcReverseLookup
 {
     [HelpOption("-?|-h|--help")]
     class Program
