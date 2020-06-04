@@ -1,0 +1,7 @@
+dotnet run -m Resolve data.json "."
+dotnet run -m Resolve data.json "。"
+dotnet run -m Resolve data.json "/"
+dotnet run -m Resolve data.json ":"
+dotnet run -m Resolve data.json "@"
+dotnet run -m Resolve data.json "?"
+dotnet run -m Resolve data.json "\"

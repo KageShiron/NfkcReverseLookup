@@ -8,53 +8,87 @@ using System.Linq;
 
 namespace NfkcReverseLookup
 {
+    public enum Mode
+    {
+        Gen,
+        Resolve,
+    }
+
     [HelpOption("-?|-h|--help")]
     class Program
     {
-        [Argument(0, Description = "UnicodeDataFile.txt")]
+        [Argument(0, Description = "UnicodeDataFile.txt or data.json")]
         public string UnicodeDataFile { get; }
-        
+
+        [Argument(1, Description = "逆引きしたい文字")]
+        public string Char { get; }
+
+        [Option(ShortName = "m")]
+        public Mode Mode { get; }
+
         static void Main(string[] args) => CommandLineApplication.Execute<Program>(args);
 
         private void OnExecute(CommandLineApplication app)
         {
-            if(string.IsNullOrEmpty(UnicodeDataFile))
+            if (string.IsNullOrEmpty(UnicodeDataFile))
             {
                 app.ShowHelp();
                 return;
             }
 
-            Console.WriteLine("{");
-            var (cplist,data) = Load(UnicodeDataFile);
-            Stack<uint> st = new Stack<uint>();
-            HashSet<uint> hash = new HashSet<uint>();
-            foreach (var target in cplist)
+            if (this.Mode == Mode.Gen)
             {
-                hash.Clear();
-                st.Push(target);
-                while(st.TryPop(out uint val))
+
+                Console.WriteLine("{");
+                var (cplist, data) = Load(UnicodeDataFile);
+                Stack<uint> st = new Stack<uint>();
+                HashSet<uint> hash = new HashSet<uint>();
+                foreach (var target in cplist)
                 {
-                    foreach (var d in data)
+                    hash.Clear();
+                    st.Push(target);
+                    while (st.TryPop(out uint val))
                     {
-                        if ( Array.IndexOf(d.Value,val) >= 0)
+                        foreach (var d in data)
                         {
-                            if (hash.Add(d.Key)) st.Push(d.Key);
+                            if (Array.IndexOf(d.Value, val) >= 0)
+                            {
+                                if (hash.Add(d.Key)) st.Push(d.Key);
+                            }
                         }
                     }
+                    if (hash.Count != 0)
+                        Console.WriteLine($"\"{target}\":[{string.Join(",", hash)}],");
                 }
-                if(hash.Count != 0)
-                    Console.WriteLine($"\"{target}\":[{string.Join(",",hash)}],");
+                Console.WriteLine("\"0\":[]}");
             }
-            Console.WriteLine("\"0\":[]}");
-        }
+            else
+            {
+                var f = File.OpenWrite("result.txt");
+                var dic = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, int[]>>(File.ReadAllText(UnicodeDataFile));
+                foreach (char c in this.Char)
+                {
+                    var hex = ((short)c).ToString("X4");
+                    Console.WriteLine("// {0} : {1}", c, hex);
+                    dic.TryGetValue(((short)c).ToString(), out int[] strs);
+                    if (strs != null)
+                        foreach (var s in strs)
+                        {
+                            var codepoints = char.ConvertFromUtf32(s);
+                            var hoge = string.Concat(codepoints.Select(x => "\\u" + ((short)x).ToString("x4")).ToArray());
+                            System.Console.WriteLine($"\"http://a{hoge}b.example.com\", // {codepoints}({codepoints.Normalize(System.Text.NormalizationForm.FormKC)})");
+                        }
 
+                }
+            }
+        }
 
         private static uint ParseHex(string s)
         {
             return uint.Parse(s, System.Globalization.NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         }
 
-        public static (IList<uint>,Dictionary<uint, uint[]>) Load(string fileName)
+        public static (IList<uint>, Dictionary<uint, uint[]>) Load(string fileName)
         {
             List<uint> cplist = new List<uint>();
             Dictionary<uint, uint[]> dict = new Dictionary<uint, uint[]>();
@@ -67,10 +101,10 @@ namespace NfkcReverseLookup
                     var cp = ParseHex(s[0]);
                     var de = DecompositionMappingParse(s[5]);
                     cplist.Add(cp);
-                    if(de != null )dict.Add(cp, de);
+                    if (de != null) dict.Add(cp, de);
                 }
             }
-            return (cplist,dict);
+            return (cplist, dict);
         }
 
         public static uint[] DecompositionMappingParse(string s)
