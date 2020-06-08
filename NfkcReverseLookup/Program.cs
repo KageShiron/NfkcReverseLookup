@@ -26,6 +26,9 @@ namespace NfkcReverseLookup
         [Option(ShortName = "m")]
         public Mode Mode { get; }
 
+        [Argument(2)]
+        public string Text {get;}
+
         static void Main(string[] args) => CommandLineApplication.Execute<Program>(args);
 
         private void OnExecute(CommandLineApplication app)
@@ -69,14 +72,14 @@ namespace NfkcReverseLookup
                 foreach (char c in this.Char)
                 {
                     var hex = ((short)c).ToString("X4");
-                    Console.WriteLine("// {0} : {1}", c, hex);
+                    // Console.WriteLine("// {0} : {1}", c, hex);
                     dic.TryGetValue(((short)c).ToString(), out int[] strs);
                     if (strs != null)
                         foreach (var s in strs)
                         {
                             var codepoints = char.ConvertFromUtf32(s);
                             var hoge = string.Concat(codepoints.Select(x => "\\u" + ((short)x).ToString("x4")).ToArray());
-                            System.Console.WriteLine($"\"http://a{hoge}b.example.com\", // {codepoints}({codepoints.Normalize(System.Text.NormalizationForm.FormKC)})");
+                            System.Console.WriteLine(Text,hoge,codepoints,codepoints.Normalize(System.Text.NormalizationForm.FormKC));
                         }
 
                 }
